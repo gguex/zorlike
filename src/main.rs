@@ -1,93 +1,12 @@
-use colored::*;
-use std::collections::HashMap;
+pub mod map;
+pub mod player;
+pub mod room;
+
+use map::Map;
+use player::Player;
+use room::Room;
+
 use std::io::{self, Write};
-
-pub type RoomId = u32;
-
-#[derive(Debug)]
-pub struct Room {
-    pub id: RoomId,
-    pub name: String,
-    pub description: String,
-    pub exits: HashMap<String, RoomId>,
-}
-
-impl Room {
-    pub fn new(id: RoomId, name: &str, description: &str) -> Self {
-        Room {
-            id,
-            name: String::from(name),
-            description: String::from(description),
-            exits: HashMap::new(),
-        }
-    }
-
-    pub fn add_exit(&mut self, direction: &str, target_id: RoomId) {
-        self.exits.insert(String::from(direction), target_id);
-    }
-}
-
-pub struct Map {
-    pub rooms: HashMap<RoomId, Room>,
-}
-
-impl Map {
-    pub fn new() -> Self {
-        Map {
-            rooms: HashMap::new(),
-        }
-    }
-
-    pub fn add_room(&mut self, room: Room) {
-        self.rooms.insert(room.id, room);
-    }
-
-    pub fn get_room(&self, id: RoomId) -> Option<&Room> {
-        self.rooms.get(&id)
-    }
-}
-
-pub struct Player {
-    pub current_room: RoomId,
-}
-
-impl Player {
-    pub fn new(starting_room: RoomId) -> Self {
-        Player {
-            current_room: starting_room,
-        }
-    }
-
-    pub fn look(&self, map: &Map) {
-        match map.get_room(self.current_room) {
-            Some(room) => {
-                println!("{}", room.name.blue());
-                println!("{}", room.description.cyan());
-                print!("Exits: ");
-                room.exits.keys().for_each(|r| print!("{r} "));
-                println!("");
-            }
-            None => {
-                println!("Error: Room {} does not exist!", self.current_room)
-            }
-        }
-    }
-
-    pub fn go(&mut self, direction: &str, map: &Map) {
-        let Some(current_room) = map.get_room(self.current_room) else {
-            println!("You are in the void");
-            return;
-        };
-
-        let Some(next_room) = current_room.exits.get(direction) else {
-            println!("There is no such exits");
-            return;
-        };
-
-        self.current_room = *next_room;
-    }
-}
-
 fn main() {
     println!("Welcome to Zorlike!");
 
@@ -102,6 +21,7 @@ fn main() {
         "You are in a dark hallway full of spiderwebs",
     );
     room1.add_exit("north", 1);
+    room1.add_item("key");
 
     let mut map = Map::new();
 
@@ -142,6 +62,17 @@ fn main() {
                 } else {
                     println!("Go where?")
                 }
+            }
+            "take" => {
+                if words.len() > 1 {
+                    player.take(words[1], &mut map);
+                    player.look(&map);
+                } else {
+                    println!("Take what?")
+                }
+            }
+            "inventory" => {
+                println!("Inventory: {:?}", player.inventory);
             }
             _ => println!("I don't understand that command."),
         }
