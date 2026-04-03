@@ -60,11 +60,28 @@ impl Player {
     pub fn look(&self, map: &Map) {
         match map.get_room(self.current_room) {
             Some(room) => {
-                println!("{}", room.name.red());
+                println!("{}", room.name.blue());
                 println!("{}", room.description.cyan());
+                print!("Exits: ");
+                room.exits.keys().for_each(|r| print!("{r} "));
+                println!("");
             }
             None => {
                 println!("Error: Room {} does not exist!", self.current_room)
+            }
+        }
+    }
+
+    pub fn go(&mut self, direction: &str, map: &Map) {
+        let Some(current_room) = map.get_room(self.current_room) else {
+            println!("You are in the void");
+            return;
+        };
+
+        match current_room.exits.get(direction) {
+            Some(next_room) => self.current_room = *next_room,
+            None => {
+                println!("There is no such exits")
             }
         }
     }
@@ -90,8 +107,11 @@ fn main() {
     map.add_room(room1);
     map.add_room(room2);
 
-    let player = Player::new(0);
+    let mut player = Player::new(0);
 
     println!("{:#?}", map.get_room(0));
+    player.look(&map);
+
+    player.go("north", &map);
     player.look(&map);
 }
