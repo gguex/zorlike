@@ -1,5 +1,6 @@
 use colored::*;
 use std::collections::HashMap;
+use std::io::{self, Write};
 
 pub type RoomId = u32;
 
@@ -78,12 +79,12 @@ impl Player {
             return;
         };
 
-        match current_room.exits.get(direction) {
-            Some(next_room) => self.current_room = *next_room,
-            None => {
-                println!("There is no such exits")
-            }
-        }
+        let Some(next_room) = current_room.exits.get(direction) else {
+            println!("There is no such exits");
+            return;
+        };
+
+        self.current_room = *next_room;
     }
 }
 
@@ -109,9 +110,40 @@ fn main() {
 
     let mut player = Player::new(0);
 
-    println!("{:#?}", map.get_room(0));
     player.look(&map);
 
-    player.go("north", &map);
-    player.look(&map);
+    loop {
+        print!("> ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+
+        let words: Vec<&str> = input.trim().split_whitespace().collect();
+
+        if words.is_empty() {
+            continue;
+        }
+
+        let verb = words[0];
+
+        match verb {
+            "quit" | "exit" => {
+                println!("Goodbye!");
+                break;
+            }
+            "look" => {
+                player.look(&map);
+            }
+            "go" => {
+                if words.len() > 1 {
+                    player.go(words[1], &map);
+                    player.look(&map);
+                } else {
+                    println!("Go where?")
+                }
+            }
+            _ => println!("I don't understand that command."),
+        }
+    }
 }
